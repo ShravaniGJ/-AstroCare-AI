@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AstroCare AI | Astronaut Health Dashboard</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            🚀 AstroCare AI
+        </div>
+
+        <nav>
+            <a href="#" class="active">🏠 Dashboard</a>
+            <a href="#">❤️ Vital Signs</a>
+            <a href="#">☢️ Radiation</a>
+            <a href="#">😴 Sleep Monitoring</a>
+            <a href="#">🧠 Mental Health</a>
+            <a href="#">🤖 AI Health Analysis</a>
+            <a href="#">📋 Health Reports</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="#">⚙️ Settings</a>
+        </div>
+
+    </aside>
+
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Header -->
+        <header class="topbar">
+
+            <div>
+                <h1>Astronaut Health Dashboard</h1>
+                <p>Space Mission Health Monitoring System</p>
+            </div>
+
+            <div class="mission-info">
+                <span>🟢 Mission Active</span>
+                <span>Mission: Artemis</span>
+            </div>
+
+        </header>
+
+
+        <!-- Welcome Section -->
+        <section class="welcome">
+
+            <h2>Welcome, Commander! 👋</h2>
+
+            <p>
+                Monitor your health and well-being during your space mission.
+            </p>
+
+        </section>
+
+
+        <!-- Vital Statistics -->
+        <section class="stats-container">
+
+            <div class="stat-card">
+                <h3>❤️ Heart Rate</h3>
+                <h2 id="heart-rate">72 BPM</h2>
+                <p>Normal Range</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>🩸 Blood Oxygen</h3>
+                <h2 id="oxygen">98%</h2>
+                <p>Normal Level</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>🌡️ Body Temperature</h3>
+                <h2 id="temperature">36.8 °C</h2>
+                <p>Normal</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>💓 Blood Pressure</h3>
+                <h2 id="blood-pressure">120/80</h2>
+                <p>Normal</p>
+            </div>
+
+        </section>
+
+
+        <!-- Monitoring Section -->
+        <section class="monitoring-container">
+
+            <div class="monitor-card">
+
+                <h2>☢️ Radiation Monitoring</h2>
+
+                <p>Current Radiation Exposure</p>
+
+                <h1 id="radiation">0.45 mSv</h1>
+
+                <p class="status">Monitoring Active</p>
+
+            </div>
+
+
+            <div class="monitor-card">
+
+                <h2>😴 Sleep Monitoring</h2>
+
+                <p>Last Sleep Duration</p>
+
+                <h1 id="sleep">7.5 Hours</h1>
+
+                <p class="status">Sleep Status: Good</p>
+
+            </div>
+
+
+            <div class="monitor-card">
+
+                <h2>🏃 Physical Activity</h2>
+
+                <p>Today's Activity</p>
+
+                <h1 id="activity">65%</h1>
+
+                <p class="status">Activity Tracking Active</p>
+
+            </div>
+
+        </section>
+
+
+        <!-- AI Health Alerts -->
+        <section class="alerts-section">
+
+            <h2>🤖 AI Health Risk Alerts</h2>
+
+            <div class="alert-box">
+
+                <h3>🟢 Overall Health Status: Stable</h3>
+
+                <p>
+                    No major health risks detected.
+                    Continue monitoring your vital signs regularly.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- Footer -->
+        <footer>
+
+            <p>
+                AstroCare AI | Astronaut Health Monitoring System
+            </p>
+
+            <p>
+                Designed for Long-Duration Space Missions 🚀
+            </p>
+
+        </footer>
+
+    </main>
+
+</body>
+</html>
