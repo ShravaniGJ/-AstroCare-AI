@@ -1055,6 +1055,79 @@ form.addEventListener("submit", async function(event) {
 
 }
 
+
+// ==================================================
+// DEMO SENSOR SIMULATION
+// Educational demonstration data only
+// ==================================================
+
+let demoReadingInProgress = false;
+let demoTick = 0;
+
+function generateDemoReading() {
+
+    if (demoReadingInProgress) return;
+
+    demoReadingInProgress = true;
+    demoTick++;
+
+    const vary = (base, amplitude, min, max, decimals = 1) => {
+        const value = base
+            + Math.sin(demoTick * 0.7) * amplitude
+            + (Math.random() - 0.5) * amplitude * 0.5;
+
+        return Number(
+            Math.min(max, Math.max(min, value)).toFixed(decimals)
+        );
+    };
+
+    const systolic = vary(120, 5, 100, 140, 0);
+    const diastolic = vary(80, 3, 60, 90, 0);
+
+    const payload = {
+        astronaut_id: ASTRONAUT_ID,
+        heart_rate: vary(75, 8, 55, 110, 0),
+        spo2: vary(98, 1, 94, 100, 1),
+        temperature: vary(36.8, 0.3, 36, 38, 1),
+        blood_pressure: `${systolic}/${diastolic}`,
+        stress_level: vary(5, 2, 1, 10, 0),
+        sleep_hours: vary(7.5, 0.5, 5, 9, 1),
+        radiation_level: vary(2.5, 0.5, 0, 5, 2),
+        bone_density: vary(1.2, 0.02, 1, 1.5, 2),
+        muscle_strength: vary(85, 3, 60, 100, 1),
+        inflammation_level: vary(5, 1, 1, 10, 1),
+        exercise_minutes: vary(60, 10, 0, 120, 0)
+    };
+
+    console.log("Generating SIMULATED demo reading:", payload);
+
+    fetch(`${API_BASE}/api/health`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(async response => {
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                result.error || `API error: ${response.status}`
+            );
+        }
+
+        console.log("SIMULATED reading saved:", result);
+        return result;
+    })
+    .catch(error => {
+        console.error("Demo simulation failed:", error);
+    })
+    .finally(() => {
+        demoReadingInProgress = false;
+    });
+}
+
 // ==================================================
 // 19. INITIALIZE DASHBOARD
 // ==================================================
@@ -1093,7 +1166,20 @@ initializeNavigation();
 initializeHealthForm();
 // INITIAL DATA
 initializeDashboard();
-// AUTOMATIC REFRESH
+// AUTOMATIC DEMO DATA + DASHBOARD REFRESH
+// Generates clearly labelled simulated data every 5 seconds.
+generateDemoReading();
+
+setInterval(async function() {
+    if (demoReadingInProgress) return;
+
+    generateDemoReading();
+
+    // Allow the POST request to finish before refreshing.
+    // The next normal refresh will also fetch the saved record.
+}, 5000);
+
+// Refresh dashboard data independently.
 setInterval(
     initializeDashboard,
     5000
