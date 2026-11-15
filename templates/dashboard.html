@@ -1,184 +1,559 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>AstroCare AI | Astronaut Health Dashboard</title>
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    <!-- JavaScript -->
-    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
-
+<title>AstroCare AI | Astronaut Health Dashboard</title>
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}">
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer></script>
+<!-- AstroCare AI JavaScript -->
+<script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
 </head>
-
 <body>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+<div class="logo">
+    🚀 AstroCare AI
+</div>
+<nav>
+    <a href="#" class="nav-link active" data-page="dashboard">🏠 Dashboard</a>
+    <a href="#" class="nav-link" data-page="entry">
+    📝 Enter Health Data
+</a>
+    <a href="#" class="nav-link" data-page="vitals">❤️ Vital Signs</a>
+    <a href="#" class="nav-link" data-page="radiation">☢️ Radiation</a>
+    <a href="#" class="nav-link" data-page="sleep">😴 Sleep Monitoring</a>
+    <a href="#" class="nav-link" data-page="mental">🧠 Mental Health</a>
+    <a href="#" class="nav-link" data-page="ai">🤖 AI Health Analysis</a>
+    <a href="#" class="nav-link" data-page="reports">📋 Health Reports</a>
+</nav>
+<div class="sidebar-bottom">
+    <a href="#" class="nav-link" data-page="settings">⚙️ Settings</a>
+</div>
+</aside>
+<!-- MAIN CONTENT -->
+<main class="main-content">
+<!-- HEADER -->
+<header class="topbar">
+    <div>
+        <h1 id="page-title">
+            Astronaut Health Dashboard
+        </h1>
+        <p>Space Mission Health Monitoring System</p>
+        <p id="date-time"></p>
+    </div>
+    <div class="mission-info">
+        <span class="mission-status">🟢 Mission Active</span>
+        <span>Mission: Artemis</span>
+        <span>Astronaut ID: ASTRO-001</span>
+    </div>
+</header>
+<!-- ================================= -->
+<!-- 1. DASHBOARD -->
+<!-- ================================= -->
+<section id="page-dashboard" class="page-section active">
+    <div class="welcome">
+        <h2>Welcome, Commander! 👋</h2>
+        <p>
+            Monitor your health and well-being during your space mission.
+        </p>
+    </div>
+    <!-- VITAL STATISTICS -->
+    <h2 class="section-heading">❤️ Vital Statistics</h2>
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>❤️ Heart Rate</h3>
+            <h2 id="heart-rate">Loading...</h2>
+            <p>Heart Rate Monitoring</p>
+        </div>
+        <div class="stat-card">
+            <h3>🩸 Blood Oxygen</h3>
+            <h2 id="oxygen">Loading...</h2>
+            <p>Oxygen Saturation (SpO₂)</p>
+        </div>
+        <div class="stat-card">
+            <h3>🌡️ Body Temperature</h3>
+            <h2 id="temperature">Loading...</h2>
+            <p>Body Temperature Monitoring</p>
+        </div>
+        <div class="stat-card">
+            <h3>💓 Blood Pressure</h3>
+            <h2 id="blood-pressure">Loading...</h2>
+            <p>Blood Pressure Monitoring</p>
+        </div>
+    </div>
+    <!-- GENERAL HEALTH MONITORING -->
+    <h2 class="section-heading">📊 Health Monitoring</h2>
+    <div class="monitoring-container">
+        <div class="monitor-card">
+            <h2>☢️ Radiation Monitoring</h2>
+            <p>Current Radiation Exposure</p>
+            <h1 id="radiation">Loading...</h1>
+            <p class="status">Radiation Monitoring Active</p>
+        </div>
+        <div class="monitor-card">
+            <h2>😴 Sleep Monitoring</h2>
+            <p>Last Sleep Duration</p>
+            <h1 id="sleep">Loading...</h1>
+            <p class="status">Sleep Monitoring Active</p>
+        </div>
+        <div class="monitor-card">
+            <h2>🏃 Physical Activity</h2>
+            <p>Today's Exercise Activity</p>
+            <h1 id="exercise-minutes">Loading...</h1>
+            <p class="status">Live Activity Monitoring</p>
+        </div>
+    </div>
+    <!-- BONE, MUSCLE AND IMMUNE HEALTH -->
+    <h2 class="section-heading">🦴 Bone, Muscle & Immune Health</h2>
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>🦴 Bone Density</h3>
+            <h2 id="bone-density">Loading...</h2>
+            <p>Bone Density Level</p>
+        </div>
+        <div class="stat-card">
+            <h3>⚠️ Bone Loss Risk</h3>
+            <h2 id="bone-loss-risk">Loading...</h2>
+            <p>Bone Loss Risk Score</p>
+        </div>
+        <div class="stat-card">
+            <h3>💪 Muscle Strength</h3>
+            <h2 id="muscle-strength">Loading...</h2>
+            <p>Muscle Strength Score</p>
+        </div>
+        <div class="stat-card">
+            <h3>🏋️ Muscle Mass</h3>
+            <h2 id="muscle-mass">Loading...</h2>
+            <p>Muscle Mass</p>
+        </div>
+        <div class="stat-card">
+            <h3>🩸 WBC Count</h3>
+            <h2 id="wbc-count">Loading...</h2>
+            <p>White Blood Cell Count</p>
+        </div>
+        <div class="stat-card">
+            <h3>🧬 Inflammation Level</h3>
+            <h2 id="inflammation-level">Loading...</h2>
+            <p>Inflammation Monitoring</p>
+        </div>
+    </div>
+    <!-- AI HEALTH ALERTS -->
+    <h2 class="section-heading">🤖 AI Health Risk Alerts</h2>
+    <div class="alert-box" id="alert-box">
+        <h3 id="health-status">Loading Health Status...</h3>
+        <p id="ai-result">
+            Fetching AI health analysis...
+        </p>
+        <div id="ai-alerts"></div>
+        <div id="ai-recommendations"></div>
+        <p id="anomaly-score"></p>
+        <small id="ai-disclaimer"></small>
+    </div>
+</section>
+<!-- ================================= -->
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
+<!-- ================================= -->
+<!-- 2. ENTER HEALTH DATA -->
+<!-- ================================= -->
 
-        <div class="logo">
-            🚀 AstroCare AI
+<section id="page-entry" class="page-section">
+
+    <div class="page-intro">
+        <h2>📝 Enter Astronaut Health Data</h2>
+        <p>Record health parameters for AI-powered health monitoring.</p>
+    </div>
+
+    <form id="health-entry-form">
+
+        <div class="info-card">
+            <h3>❤️ Vital Signs</h3>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <label for="input-heart-rate">Heart Rate (BPM)</label>
+                    <input type="number" id="input-heart-rate"
+                           step="any" required placeholder="e.g. 75">
+                </div>
+
+                <div class="stat-card">
+                    <label for="input-spo2">Blood Oxygen (SpO2 %)</label>
+                    <input type="number" id="input-spo2"
+                           step="any" required placeholder="e.g. 98">
+                </div>
+
+                <div class="stat-card">
+                    <label for="input-temperature">Temperature (°C)</label>
+                    <input type="number" id="input-temperature"
+                           step="any" required placeholder="e.g. 36.8">
+                </div>
+
+                <div class="stat-card">
+                    <label for="input-blood-pressure">Blood Pressure</label>
+                    <input type="text" id="input-blood-pressure"
+                           required pattern="[0-9]+([.][0-9]+)?(/[0-9]+([.][0-9]+)?)?"
+                           placeholder="e.g. 120/80">
+                </div>
+            </div>
         </div>
 
-        <nav>
-            <a href="#" class="active">🏠 Dashboard</a>
-            <a href="#">❤️ Vital Signs</a>
-            <a href="#">☢️ Radiation</a>
-            <a href="#">😴 Sleep Monitoring</a>
-            <a href="#">🧠 Mental Health</a>
-            <a href="#">🤖 AI Health Analysis</a>
-            <a href="#">📋 Health Reports</a>
-        </nav>
+        <div class="info-card">
+            <h3>☢️ Radiation & Sleep Monitoring</h3>
 
-        <div class="sidebar-bottom">
-            <a href="#">⚙️ Settings</a>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <label for="input-radiation">Radiation (mSv)</label>
+                    <input type="number" id="input-radiation"
+                           step="any" required placeholder="e.g. 0.5">
+                </div>
+
+                <div class="stat-card">
+                    <label for="input-sleep">Sleep Hours</label>
+                    <input type="number" id="input-sleep"
+                           step="any" required placeholder="e.g. 8">
+                </div>
+
+                <div class="stat-card">
+                    <label for="input-stress">Stress Level</label>
+                    <input type="number" id="input-stress"
+                           step="any" required placeholder="e.g. 3">
+                </div>
+            </div>
         </div>
 
-    </aside>
+        <div class="info-card">
+            <h3>🦴 Bone & Muscle Health</h3>
 
+            <div class="stats-container">
+                <div class="stat-card">
+                    <label for="input-bone-density">Bone Density</label>
+                    <input type="number" id="input-bone-density"
+                           step="any" required placeholder="Enter value">
+                </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
+                <div class="stat-card">
+                    <label for="input-bone-risk">Bone Loss Risk</label>
+                    <input type="number" id="input-bone-risk"
+                           step="any" required placeholder="Enter value">
+                </div>
 
-        <!-- Header -->
-        <header class="topbar">
+                <div class="stat-card">
+                    <label for="input-muscle-strength">Muscle Strength</label>
+                    <input type="number" id="input-muscle-strength"
+                           step="any" required placeholder="Enter value">
+                </div>
 
-            <div>
-                <h1>Astronaut Health Dashboard</h1>
-                <p>Space Mission Health Monitoring System</p>
+                <div class="stat-card">
+                    <label for="input-muscle-mass">Muscle Mass</label>
+                    <input type="number" id="input-muscle-mass"
+                           step="any" required placeholder="Enter value">
+                </div>
             </div>
+        </div>
 
-            <div class="mission-info">
-                <span>🟢 Mission Active</span>
-                <span>Mission: Artemis</span>
+        <div class="info-card">
+            <h3>🩸 Immune Health & Physical Activity</h3>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <label for="input-exercise">Exercise Minutes</label>
+                    <input type="number" id="input-exercise"
+                           step="any" required placeholder="e.g. 45">
+                </div>
+
+                <div class="stat-card">
+                    <label for="input-wbc">WBC Count</label>
+                    <input type="number" id="input-wbc"
+                           step="any" required placeholder="Enter value">
+                </div>
+
+                <div class="stat-card">
+                    <label for="input-inflammation">Inflammation Level</label>
+                    <input type="number" id="input-inflammation"
+                           step="any" required placeholder="Enter value">
+                </div>
             </div>
+        </div>
 
-        </header>
+        <div class="info-card">
+            <button type="submit" id="submit-health-data">
+                💾 Save Health Data
+            </button>
 
+            <p id="form-message" role="status" aria-live="polite"></p>
+        </div>
 
-        <!-- Welcome Section -->
-        <section class="welcome">
+    </form>
 
-            <h2>Welcome, Commander! 👋</h2>
+</section>
 
-            <p>
-                Monitor your health and well-being during your space mission.
-            </p>
+<!-- 2. VITAL SIGNS -->
+<!-- ================================= -->
+<section id="page-vitals" class="page-section">
+    <div class="page-intro">
+        <h2>❤️ Vital Signs Monitoring</h2>
+        <p>
+            Monitor the astronaut's essential physiological parameters.
+        </p>
+    </div>
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Heart Rate</h3>
+            <h2 id="vital-heart-rate">Loading...</h2>
+            <p>Beats per minute</p>
+        </div>
+        <div class="stat-card">
+            <h3>Blood Oxygen</h3>
+            <h2 id="vital-oxygen">Loading...</h2>
+            <p>SpO₂</p>
+        </div>
+        <div class="stat-card">
+            <h3>Body Temperature</h3>
+            <h2 id="vital-temperature">Loading...</h2>
+            <p>Degrees Celsius</p>
+        </div>
+        <div class="stat-card">
+            <h3>Blood Pressure</h3>
+            <h2 id="vital-blood-pressure">Loading...</h2>
+            <p>Blood Pressure</p>
+        </div>
+    </div>
+    <div class="info-card">
+        <h3>📅 Latest Health Record</h3>
+        <p id="vital-recorded-at">
+            Waiting for health records...
+        </p>
+    </div>
+    <!-- HEART RATE CHART -->
+    <div class="info-card chart-card">
+        <h3>❤️ Heart Rate Trends</h3>
+        <canvas id="heartRateChart"></canvas>
+    </div>
+    <!-- BLOOD OXYGEN CHART -->
+    <div class="info-card chart-card">
+        <h3>🩸 Blood Oxygen Trends</h3>
+        <canvas id="oxygenChart"></canvas>
+    </div>
 
-        </section>
+    <!-- BONE DENSITY TREND -->
+    <div class="info-card chart-card">
+        <h3>🦴 Bone Density Trends</h3>
+        <canvas id="boneDensityChart"></canvas>
+    </div>
 
+    <!-- MUSCLE STRENGTH TREND -->
+    <div class="info-card chart-card">
+        <h3>💪 Muscle Strength Trends</h3>
+        <canvas id="muscleStrengthChart"></canvas>
+    </div>
 
-        <!-- Vital Statistics -->
-        <section class="stats-container">
+    <!-- IMMUNE HEALTH TRENDS -->
+    <div class="info-card chart-card">
+        <h3>🩸 WBC Count Trends</h3>
+        <canvas id="wbcChart"></canvas>
+    </div>
 
-            <div class="stat-card">
-                <h3>❤️ Heart Rate</h3>
-                <h2 id="heart-rate">72 BPM</h2>
-                <p>Normal Range</p>
-            </div>
+    <div class="info-card chart-card">
+        <h3>🧬 Inflammation Level Trends</h3>
+        <canvas id="inflammationChart"></canvas>
+    </div>
 
-            <div class="stat-card">
-                <h3>🩸 Blood Oxygen</h3>
-                <h2 id="oxygen">98%</h2>
-                <p>Normal Level</p>
-            </div>
+    <!-- PHYSICAL ACTIVITY TRENDS -->
+    <div class="info-card chart-card">
+        <h3>🏃 Exercise Activity Trends</h3>
+        <canvas id="exerciseChart"></canvas>
+    </div>
 
-            <div class="stat-card">
-                <h3>🌡️ Body Temperature</h3>
-                <h2 id="temperature">36.8 °C</h2>
-                <p>Normal</p>
-            </div>
-
-            <div class="stat-card">
-                <h3>💓 Blood Pressure</h3>
-                <h2 id="blood-pressure">120/80</h2>
-                <p>Normal</p>
-            </div>
-
-        </section>
-
-
-        <!-- Monitoring Section -->
-        <section class="monitoring-container">
-
-            <div class="monitor-card">
-
-                <h2>☢️ Radiation Monitoring</h2>
-
-                <p>Current Radiation Exposure</p>
-
-                <h1 id="radiation">0.45 mSv</h1>
-
-                <p class="status">Monitoring Active</p>
-
-            </div>
-
-
-            <div class="monitor-card">
-
-                <h2>😴 Sleep Monitoring</h2>
-
-                <p>Last Sleep Duration</p>
-
-                <h1 id="sleep">7.5 Hours</h1>
-
-                <p class="status">Sleep Status: Good</p>
-
-            </div>
-
-
-            <div class="monitor-card">
-
-                <h2>🏃 Physical Activity</h2>
-
-                <p>Today's Activity</p>
-
-                <h1 id="activity">65%</h1>
-
-                <p class="status">Activity Tracking Active</p>
-
-            </div>
-
-        </section>
-
-
-        <!-- AI Health Alerts -->
-        <section class="alerts-section">
-
-            <h2>🤖 AI Health Risk Alerts</h2>
-
-            <div class="alert-box">
-
-                <h3>🟢 Overall Health Status: Stable</h3>
-
-                <p>
-                    No major health risks detected.
-                    Continue monitoring your vital signs regularly.
-                </p>
-
-            </div>
-
-        </section>
-
-
-        <!-- Footer -->
-        <footer>
-
-            <p>
-                AstroCare AI | Astronaut Health Monitoring System
-            </p>
-
-            <p>
-                Designed for Long-Duration Space Missions 🚀
-            </p>
-
-        </footer>
-
-    </main>
-
+</section>
+<!-- ================================= -->
+<!-- 3. RADIATION MONITORING -->
+<!-- ================================= -->
+<section id="page-radiation" class="page-section">
+    <div class="page-intro">
+        <h2>☢️ Radiation Monitoring</h2>
+        <p>
+            Monitor radiation exposure during space missions.
+        </p>
+    </div>
+    <div class="monitor-card detail-card">
+        <h2>Current Radiation Exposure</h2>
+        <h1 id="radiation-detail">Loading...</h1>
+        <p>
+            Radiation exposure recorded in millisieverts (mSv).
+        </p>
+    </div>
+    <div class="info-card">
+        <h3>Radiation Monitoring Information</h3>
+        <p>
+            Radiation monitoring helps track astronaut exposure
+            to radiation during space missions.
+        </p>
+        <p>
+            Historical readings can help identify changes
+            in radiation exposure over time.
+        </p>
+    </div>
+    <div class="info-card chart-card">
+        <h3>☢️ Radiation Exposure Trends</h3>
+        <canvas id="radiationChart"></canvas>
+    </div>
+    <div id="radiation-history"></div>
+</section>
+<!-- ================================= -->
+<!-- 4. SLEEP MONITORING -->
+<!-- ================================= -->
+<section id="page-sleep" class="page-section">
+    <div class="page-intro">
+        <h2>😴 Sleep Monitoring</h2>
+        <p>
+            Monitor sleep duration and astronaut rest patterns.
+        </p>
+    </div>
+    <div class="monitor-card detail-card">
+        <h2>Last Sleep Duration</h2>
+        <h1 id="sleep-detail">Loading...</h1>
+        <p>
+            Recorded sleep duration in hours.
+        </p>
+    </div>
+    <div class="info-card">
+        <h3>Sleep Monitoring Information</h3>
+        <p>
+            Sleep monitoring helps evaluate astronaut rest
+            during long-duration space missions.
+        </p>
+    </div>
+    <div id="sleep-history"></div>
+</section>
+<!-- ================================= -->
+<!-- 5. MENTAL HEALTH -->
+<!-- ================================= -->
+<section id="page-mental" class="page-section">
+    <div class="page-intro">
+        <h2>🧠 Mental Health Monitoring</h2>
+        <p>
+            Monitor stress levels and mental well-being
+            during space missions.
+        </p>
+    </div>
+    <div class="monitor-card detail-card">
+        <h2>Current Stress Level</h2>
+        <h1 id="stress-level">Loading...</h1>
+        <p>
+            Stress measurement on a scale of 0–10.
+        </p>
+    </div>
+    <div class="info-card">
+        <h3>Mental Health Monitoring</h3>
+        <p>
+            Monitoring stress levels can help identify
+            potential mental well-being concerns.
+        </p>
+        <p>
+            AI-based analysis can provide additional
+            insights using available health readings.
+        </p>
+    </div>
+    <div id="stress-history"></div>
+</section>
+<!-- ================================= -->
+<!-- 6. AI HEALTH ANALYSIS -->
+<!-- ================================= -->
+<section id="page-ai" class="page-section">
+    <div class="page-intro">
+        <h2>🤖 AI Health Analysis</h2>
+        <p>
+            AI-powered analysis of astronaut health readings.
+        </p>
+    </div>
+    <div class="alert-box">
+        <h3 id="ai-detail-status">
+            Waiting for AI analysis...
+        </h3>
+        <p id="ai-detail-result">
+            Fetching AI health analysis...
+        </p>
+        <h3>⚠️ Health Alerts</h3>
+        <div id="ai-detail-alerts"></div>
+        <h3>💡 Recommendations</h3>
+        <div id="ai-detail-recommendations"></div>
+        <p id="ai-detail-score"></p>
+        <small id="ai-detail-disclaimer"></small>
+    </div>
+</section>
+<!-- ================================= -->
+<!-- 7. HEALTH REPORTS -->
+<!-- ================================= -->
+<section id="page-reports" class="page-section">
+    <div class="page-intro">
+        <h2>📋 Health Reports</h2>
+        <p>
+            View historical astronaut health monitoring records.
+        </p>
+    </div>
+    <div class="info-card">
+        <h3>Health Monitoring History</h3>
+        <p>
+            The following table displays recorded astronaut
+            health parameters.
+        </p>
+    </div>
+    <div id="health-records">
+        Loading health records...
+    </div>
+</section>
+<!-- ================================= -->
+<!-- 8. SETTINGS -->
+<!-- ================================= -->
+<section id="page-settings" class="page-section">
+    <div class="page-intro">
+        <h2>⚙️ Settings</h2>
+        <p>
+            Astronaut profile and monitoring configuration.
+        </p>
+    </div>
+    <div class="info-card">
+        <h3>👨‍🚀 Astronaut Information</h3>
+        <p><strong>Astronaut ID:</strong> ASTRO-001</p>
+        <p><strong>Mission:</strong> Artemis</p>
+        <p><strong>System:</strong> AstroCare AI</p>
+    </div>
+    <div class="info-card">
+        <h3>🔄 Data Monitoring</h3>
+        <p>
+            Health records are automatically refreshed
+            every five seconds.
+        </p>
+        <p>
+            AI health analysis is retrieved from the
+            Flask backend.
+        </p>
+    </div>
+    <div class="info-card">
+        <h3>🔒 System Information</h3>
+        <p>
+            AstroCare AI – Astronaut Health Monitoring System.
+        </p>
+        <p>
+            Educational simulation only.
+            Not a medical diagnosis.
+        </p>
+    </div>
+</section>
+<!-- FOOTER -->
+<footer>
+    <p>
+        AstroCare AI | Astronaut Health Monitoring System
+    </p>
+    <p>
+        Designed for Long-Duration Space Missions 🚀
+    </p>
+    <p>
+        Educational simulation only. Not a medical diagnosis.
+    </p>
+</footer>
+</main>
 </body>
 </html>

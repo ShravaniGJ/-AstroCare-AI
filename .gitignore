@@ -3,3 +3,16 @@ __pycache__/
 *.pyc
 .DS_Store
 .env
+
+# Database files
+*.db
+*.db-journal
+
+# Backup files
+*_backup*
+*_before_*
+*.backup
+Archive.zip
+
+# Environment files
+.env
