@@ -1,20 +1,17 @@
 // ==================================================
-// ASTROCARE AI
-// COMPLETE FRONTEND JAVASCRIPT
+// ASTROCARE AI - COMPLETE FRONTEND JAVASCRIPT
+// Replace the entire contents of static/js/script.js with this file.
 // ==================================================
 
+"use strict";
+
 // CONFIGURATION
-
 const ASTRONAUT_ID = "ASTRO-001";
-
 const API_BASE = "";
 
 let latestHealthData = [];
-
 let latestAIData = null;
-
 const chartInstances = {};
-
 let refreshInProgress = false;
 
 // ==================================================
@@ -22,45 +19,25 @@ let refreshInProgress = false;
 // ==================================================
 
 function setText(id, value) {
-
-const element = document.getElementById(id);
-if (element) {
-    element.textContent =
-        value === null || value === undefined
-            ? "N/A"
-            : value;
-}
-
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent =
+            value === null || value === undefined ? "N/A" : value;
+    }
 }
 
 function getNumber(value) {
-
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
+    if (value === null || value === undefined || value === "") {
         return null;
     }
 
-    const number = parseFloat(
-        String(value).replace(/,/g, "").trim()
-    );
-
-    return Number.isFinite(number)
-        ? number
-        : null;
+    const number = parseFloat(String(value).replace(/,/g, "").trim());
+    return Number.isFinite(number) ? number : null;
 }
 
-
 function formatValue(value) {
-
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-        return "N/A";
+    if (value === null || value === undefined || value === "") {
+        return "Not recorded";
     }
 
     if (typeof value === "number" && Number.isFinite(value)) {
@@ -72,31 +49,50 @@ function formatValue(value) {
     return String(value);
 }
 
+function formatWithUnit(value, unit) {
+    return value === null || value === undefined || value === ""
+        ? "Not recorded"
+        : `${formatValue(value)} ${unit}`;
+}
+
 function escapeHTML(value) {
-
-return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 function formatDate(value) {
+    if (!value) return "Date unavailable";
 
-if (!value) {
-    return "Date unavailable";
-}
-const date = new Date(value);
-if (Number.isNaN(date.getTime())) {
-    return String(value);
-}
-return date.toLocaleString("en-IN", {
-    dateStyle: "short",
-    timeStyle: "short"
-});
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
 
+    return date.toLocaleString("en-IN", {
+        dateStyle: "short",
+        timeStyle: "short"
+    });
+}
+
+async function readJsonResponse(response) {
+    const text = await response.text();
+
+    let data;
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        throw new Error("The server returned an invalid response.");
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data.error || data.message || `Request failed (${response.status})`
+        );
+    }
+
+    return data;
 }
 
 // ==================================================
@@ -104,16 +100,15 @@ return date.toLocaleString("en-IN", {
 // ==================================================
 
 function updateDateTime() {
+    const now = new Date();
 
-const now = new Date();
-setText(
-    "date-time",
-    "🕒 " + now.toLocaleString("en-IN", {
-        dateStyle: "medium",
-        timeStyle: "medium"
-    })
-);
-
+    setText(
+        "date-time",
+        "🕒 " + now.toLocaleString("en-IN", {
+            dateStyle: "medium",
+            timeStyle: "medium"
+        })
+    );
 }
 
 // ==================================================
@@ -121,54 +116,46 @@ setText(
 // ==================================================
 
 const pageTitles = {
-
-dashboard: "Astronaut Health Dashboard",
-entry: "Enter Health Data",
-vitals: "Vital Signs Monitoring",
-radiation: "Radiation Monitoring",
-sleep: "Sleep Monitoring",
-mental: "Mental Health Monitoring",
-ai: "AI Health Analysis",
-reports: "Health Reports",
-settings: "Settings"
-
+    dashboard: "Astronaut Health Dashboard",
+    entry: "Enter Health Data",
+    vitals: "Vital Signs Monitoring",
+    radiation: "Radiation Monitoring",
+    sleep: "Sleep Monitoring",
+    mental: "Mental Health Monitoring",
+    ai: "AI Health Analysis",
+    reports: "Health Reports",
+    settings: "Settings"
 };
 
 function initializeNavigation() {
+    const navLinks = document.querySelectorAll(".nav-link");
+    const pages = document.querySelectorAll(".page-section");
 
-const navLinks =
-    document.querySelectorAll(".nav-link");
-const pages =
-    document.querySelectorAll(".page-section");
-navLinks.forEach(link => {
-    link.addEventListener("click", function(event) {
-        event.preventDefault();
-        const targetPage = this.dataset.page;
-        if (!targetPage) return;
-        const selectedPage =
-            document.getElementById("page-" + targetPage);
-        if (!selectedPage) return;
-        pages.forEach(page => {
-            page.classList.remove("active");
+    navLinks.forEach(link => {
+        link.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            const targetPage = this.dataset.page;
+            if (!targetPage) return;
+
+            const selectedPage =
+                document.getElementById("page-" + targetPage);
+
+            if (!selectedPage) return;
+
+            pages.forEach(page => page.classList.remove("active"));
+            navLinks.forEach(nav => nav.classList.remove("active"));
+
+            selectedPage.classList.add("active");
+            this.classList.add("active");
+
+            setText("page-title", pageTitles[targetPage] || targetPage);
+
+            if (targetPage === "vitals" || targetPage === "radiation") {
+                setTimeout(resizeAllCharts, 250);
+            }
         });
-        navLinks.forEach(nav => {
-            nav.classList.remove("active");
-        });
-        selectedPage.classList.add("active");
-        this.classList.add("active");
-        setText(
-            "page-title",
-            pageTitles[targetPage]
-        );
-        if (
-            targetPage === "vitals" ||
-            targetPage === "radiation"
-        ) {
-            setTimeout(resizeAllCharts, 250);
-        }
     });
-});
-
 }
 
 // ==================================================
@@ -176,39 +163,31 @@ navLinks.forEach(link => {
 // ==================================================
 
 async function fetchHealthData() {
-
-try {
-    const response = await fetch(
-        `${API_BASE}/api/health/${ASTRONAUT_ID}`
-    );
-    if (!response.ok) {
-        throw new Error(
-            "Health API error: " + response.status
+    try {
+        const response = await fetch(
+            `${API_BASE}/api/health/${ASTRONAUT_ID}`,
+            { cache: "no-store" }
         );
-    }
-    const data = await response.json();
-    if (!Array.isArray(data)) {
-        throw new Error(
-            "Invalid health records received."
-        );
-    }
-    latestHealthData = data;
-    updateHealthDashboard(data);
-    updateHealthReports(data);
-    updateHistory(data);
-    updateHealthCharts(data);
-}
-catch (error) {
-    console.error(
-        "Health Data Error:",
-        error
-    );
-    setText(
-        "health-status",
-        "Health Data Unavailable"
-    );
-}
 
+        const data = await readJsonResponse(response);
+
+        if (!Array.isArray(data)) {
+            throw new Error("Invalid health records received.");
+        }
+
+        latestHealthData = data;
+
+        updateHealthDashboard(data);
+        updateHealthReports(data);
+        updateHistory(data);
+        updateHealthCharts(data);
+
+        return data;
+    } catch (error) {
+        console.error("Health Data Error:", error);
+        setText("health-status", "Health Data Unavailable");
+        throw error;
+    }
 }
 
 // ==================================================
@@ -216,108 +195,61 @@ catch (error) {
 // ==================================================
 
 function updateHealthDashboard(data) {
+    if (!Array.isArray(data) || data.length === 0) {
+        ["heart-rate", "oxygen", "temperature", "blood-pressure", "radiation",
+         "radiation-detail", "sleep", "sleep-detail", "exercise-minutes",
+         "bone-density", "bone-loss-risk", "muscle-strength", "muscle-mass",
+         "wbc-count", "inflammation-level", "vital-heart-rate", "vital-oxygen",
+         "vital-temperature", "vital-blood-pressure", "stress-level"]
+            .forEach(id => setText(id, "No reading yet"));
+        setText("vital-recorded-at", "Enter a reading or add one demo sample.");
+        setText("reading-source", "No health readings have been recorded yet.");
+        return;
+    }
 
-if (!Array.isArray(data) || data.length === 0) {
-    return;
-}
-// Latest record
-const latest = data[0];
-// BASIC VITALS
-setText(
-    "heart-rate",
-    formatValue(latest.heart_rate) + " BPM"
-);
-setText(
-    "oxygen",
-    formatValue(latest.spo2) + "%"
-);
-setText(
-    "temperature",
-    formatValue(latest.temperature) + " °C"
-);
-setText(
-    "blood-pressure",
-    formatValue(latest.blood_pressure)
-);
-// RADIATION
-setText(
-    "radiation",
-    formatValue(latest.radiation_level) + " mSv"
-);
-setText(
-    "radiation-detail",
-    formatValue(latest.radiation_level) + " mSv"
-);
-// SLEEP
-setText(
-    "sleep",
-    formatValue(latest.sleep_hours) + " Hours"
-);
-setText(
-    "sleep-detail",
-    formatValue(latest.sleep_hours) + " Hours"
-);
-// EXERCISE
-setText(
-    "exercise-minutes",
-    formatValue(latest.exercise_minutes) + " min"
-);
-// BONE HEALTH
-setText(
-    "bone-density",
-    formatValue(latest.bone_density)
-);
-setText(
-    "bone-loss-risk",
-    formatValue(latest.bone_loss_risk) + " %"
-);
-// MUSCLE HEALTH
-setText(
-    "muscle-strength",
-    formatValue(latest.muscle_strength)
-);
-setText(
-    "muscle-mass",
-    formatValue(latest.muscle_mass)
-);
-// IMMUNE HEALTH
-setText(
-    "wbc-count",
-    formatValue(latest.wbc_count)
-);
-setText(
-    "inflammation-level",
-    formatValue(latest.inflammation_level)
-);
-// VITALS PAGE
-setText(
-    "vital-heart-rate",
-    formatValue(latest.heart_rate) + " BPM"
-);
-setText(
-    "vital-oxygen",
-    formatValue(latest.spo2) + "%"
-);
-setText(
-    "vital-temperature",
-    formatValue(latest.temperature) + " °C"
-);
-setText(
-    "vital-blood-pressure",
-    formatValue(latest.blood_pressure)
-);
-setText(
-    "vital-recorded-at",
-    "Last recorded: " + formatDate(latest.recorded_at)
-);
-// MENTAL HEALTH
-setText(
-    "stress-level",
-    formatValue(latest.stress_level) + " / 10"
-);
-// VISUAL INDICATORS
-updateVisualHealthIndicators();
+    const latest = data[0];
+    const radiation =
+        latest.radiation_level ?? latest.radiation_msv;
+    const sourceLabel = latest.data_source === "demo"
+        ? "Latest reading: synthetic demo sample."
+        : latest.data_source === "manual"
+            ? "Latest reading: manually entered sample."
+            : "Latest reading source: legacy record (not labeled).";
+    setText("reading-source", sourceLabel);
 
+    setText("heart-rate", formatWithUnit(latest.heart_rate, "BPM"));
+    setText("oxygen", formatWithUnit(latest.spo2, "%"));
+    setText("temperature", formatWithUnit(latest.temperature, "°C"));
+    setText("blood-pressure", formatValue(latest.blood_pressure));
+
+    setText("radiation", formatWithUnit(radiation, "mSv"));
+    setText("radiation-detail", formatWithUnit(radiation, "mSv"));
+
+    setText("sleep", formatWithUnit(latest.sleep_hours, "hours"));
+    setText("sleep-detail", formatWithUnit(latest.sleep_hours, "hours"));
+    setText("exercise-minutes", formatWithUnit(latest.exercise_minutes, "min"));
+
+    setText("bone-density", formatValue(latest.bone_density));
+    setText("bone-loss-risk", formatWithUnit(latest.bone_loss_risk, "%"));
+
+    setText("muscle-strength", formatValue(latest.muscle_strength));
+    setText("muscle-mass", formatValue(latest.muscle_mass));
+
+    setText("wbc-count", formatValue(latest.wbc_count));
+    setText("inflammation-level", formatValue(latest.inflammation_level));
+
+    setText("vital-heart-rate", formatWithUnit(latest.heart_rate, "BPM"));
+    setText("vital-oxygen", formatWithUnit(latest.spo2, "%"));
+    setText("vital-temperature", formatWithUnit(latest.temperature, "°C"));
+    setText("vital-blood-pressure", formatValue(latest.blood_pressure));
+    setText(
+        "vital-recorded-at",
+        "Last recorded: " + formatDate(latest.recorded_at)
+    );
+
+    setText("stress-level", formatWithUnit(latest.stress_level, "/ 10"));
+
+    updateVisualHealthIndicators();
 }
 
 // ==================================================
@@ -325,585 +257,539 @@ updateVisualHealthIndicators();
 // ==================================================
 
 function getChartOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            intersect: false,
+            mode: "index"
+        },
+        animation: {
+            duration: 350
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: "top",
+                labels: {
+                    color: "#cbd5e1",
+                    usePointStyle: true,
+                    padding: 15
+                }
+            },
+            tooltip: {
+                enabled: true,
+                backgroundColor: "#0b192d",
+                titleColor: "#38bdf8",
+                bodyColor: "#ffffff",
+                borderColor: "#38bdf8",
+                borderWidth: 1
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    color: "rgba(148,163,184,0.08)"
+                },
+                ticks: {
+                    color: "#94a3b8",
+                    maxTicksLimit: 8,
+                    maxRotation: 0
+                }
+            },
+            y: {
+                beginAtZero: false,
+                grid: {
+                    color: "rgba(148,163,184,0.12)"
+                },
+                ticks: {
+                    color: "#94a3b8"
+                }
+            }
+        }
+    };
+}
 
-return {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-        intersect: false,
-        mode: "index"
-    },
-    animation: {
-        duration: 400
-    },
-    plugins: {
-        legend: {
-            display: true,
-            position: "top",
-            labels: {
-                color: "#cbd5e1",
-                usePointStyle: true,
-                padding: 15
-            }
-        },
-        tooltip: {
-            enabled: true,
-            backgroundColor: "#0b192d",
-            titleColor: "#38bdf8",
-            bodyColor: "#ffffff",
-            borderColor: "#38bdf8",
-            borderWidth: 1
-        }
-    },
-    scales: {
-        x: {
-            grid: {
-                color: "rgba(148,163,184,0.08)"
-            },
-            ticks: {
-                color: "#94a3b8",
-                maxTicksLimit: 8
-            }
-        },
-        y: {
-            beginAtZero: false,
-            grid: {
-                color: "rgba(148,163,184,0.12)"
-            },
-            ticks: {
-                color: "#94a3b8"
-            }
-        }
+// ==================================================
+// 7. CREATE AND UPDATE CHARTS
+// ==================================================
+
+function createHealthChart(canvasId, label, color) {
+    const canvas = document.getElementById(canvasId);
+
+    if (!canvas || typeof Chart === "undefined") {
+        console.warn("Chart canvas or Chart.js not found:", canvasId);
+        return null;
     }
-};
 
+    if (chartInstances[canvasId]) {
+        chartInstances[canvasId].destroy();
+        delete chartInstances[canvasId];
+    }
+
+    const context = canvas.getContext("2d");
+
+    chartInstances[canvasId] = new Chart(context, {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: [{
+                label: label,
+                data: [],
+                borderColor: color,
+                backgroundColor: color + "22",
+                borderWidth: 2,
+                fill: true,
+                tension: 0.35,
+                pointRadius: 2,
+                pointHoverRadius: 5
+            }]
+        },
+        options: getChartOptions()
+    });
+
+    return chartInstances[canvasId];
 }
 
-// ==================================================
-// 7. CREATE OR UPDATE CHART
-// ==================================================
-
-function createOrUpdateChart(
-
-canvasId,
-labels,
-values,
-chartTitle,
-chartColor
-
-) {
-
-const canvas = document.getElementById(canvasId);
-if (!canvas || typeof Chart === "undefined") {
-    return;
+function initializeCharts() {
+    createHealthChart("heartRateChart", "Heart Rate (BPM)", "#ef4444");
+    createHealthChart("oxygenChart", "Oxygen Level (%)", "#3b82f6");
+    createHealthChart("radiationChart", "Radiation (mSv)", "#a855f7");
+    createHealthChart("boneDensityChart", "Bone Density", "#14b8a6");
+    createHealthChart("muscleStrengthChart", "Muscle Strength", "#f59e0b");
+    createHealthChart("wbcChart", "WBC Count", "#22c55e");
+    createHealthChart("inflammationChart", "Inflammation", "#ec4899");
+    createHealthChart("exerciseChart", "Exercise (Minutes)", "#06b6d4");
 }
-const dataset = {
-    label: chartTitle,
-    data: values,
-    borderColor: chartColor,
-    backgroundColor: chartColor + "22",
-    borderWidth: 3,
-    tension: 0.35,
-    fill: true,
-    pointRadius: 3,
-    pointHoverRadius: 7,
-    pointBackgroundColor: chartColor,
-    pointBorderColor: "#0b1120",
-    pointBorderWidth: 2
-};
-if (chartInstances[canvasId]) {
+
+function getChartValue(record, key) {
+    if (!record) return null;
+
+    if (key === "radiation_level") {
+        return getNumber(
+            record.radiation_level ?? record.radiation_msv
+        );
+    }
+
+    return getNumber(record[key]);
+}
+
+function updateSingleChart(canvasId, records, key) {
     const chart = chartInstances[canvasId];
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = values;
-    chart.data.datasets[0].label = chartTitle;
+
+    if (!chart || !Array.isArray(records)) return;
+
+    // API is expected to return newest record first.
+    // Reverse the records to display old-to-new on the chart.
+    const orderedRecords = records.slice(0, 50).reverse();
+
+    chart.data.labels = orderedRecords.map((record, index) => {
+        if (record.recorded_at) {
+            const date = new Date(record.recorded_at);
+
+            if (!Number.isNaN(date.getTime())) {
+                return date.toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                });
+            }
+        }
+
+        return `Reading ${index + 1}`;
+    });
+
+    chart.data.datasets[0].data = orderedRecords.map(record =>
+        getChartValue(record, key)
+    );
+
     chart.update("none");
-    return;
-}
-chartInstances[canvasId] = new Chart(canvas, {
-    type: "line",
-    data: {
-        labels: labels,
-        datasets: [dataset]
-    },
-    options: getChartOptions()
-});
-
 }
 
-// ==================================================
-// 8. UPDATE ALL CHARTS
-// ==================================================
+function updateHealthCharts(records) {
+    if (!Array.isArray(records)) return;
 
-function updateHealthCharts(data) {
-
-if (typeof Chart === "undefined") {
-    console.error("Chart.js not loaded.");
-    return;
+    updateSingleChart("heartRateChart", records, "heart_rate");
+    updateSingleChart("oxygenChart", records, "spo2");
+    updateSingleChart("radiationChart", records, "radiation_level");
+    updateSingleChart("boneDensityChart", records, "bone_density");
+    updateSingleChart("muscleStrengthChart", records, "muscle_strength");
+    updateSingleChart("wbcChart", records, "wbc_count");
+    updateSingleChart("inflammationChart", records, "inflammation_level");
+    updateSingleChart("exerciseChart", records, "exercise_minutes");
 }
-if (!Array.isArray(data) || data.length === 0) {
-    return;
-}
-const records = [...data]
-    .slice(0, 50)
-    .reverse();
-const labels = records.map(record =>
-    formatDate(record.recorded_at)
-);
-const chartDefinitions = [
-    {
-        id: "heartRateChart",
-        field: "heart_rate",
-        title: "Heart Rate (BPM)",
-        color: "#38bdf8"
-    },
-    {
-        id: "oxygenChart",
-        field: "spo2",
-        title: "Blood Oxygen (%)",
-        color: "#818cf8"
-    },
-    {
-        id: "radiationChart",
-        field: "radiation_level",
-        title: "Radiation Exposure (mSv)",
-        color: "#c084fc"
-    },
-    {
-        id: "boneDensityChart",
-        field: "bone_density",
-        title: "Bone Density",
-        color: "#4ade80"
-    },
-    {
-        id: "muscleStrengthChart",
-        field: "muscle_strength",
-        title: "Muscle Strength",
-        color: "#fb923c"
-    },
-    {
-        id: "wbcChart",
-        field: "wbc_count",
-        title: "WBC Count",
-        color: "#22d3ee"
-    },
-    {
-        id: "inflammationChart",
-        field: "inflammation_level",
-        title: "Inflammation Level",
-        color: "#fb7185"
-    },
-    {
-        id: "exerciseChart",
-        field: "exercise_minutes",
-        title: "Exercise Minutes",
-        color: "#60a5fa"
-    }
-];
-chartDefinitions.forEach(definition => {
-    const values = records.map(record =>
-        getNumber(record[definition.field])
-    );
-    createOrUpdateChart(
-        definition.id,
-        labels,
-        values,
-        definition.title,
-        definition.color
-    );
-});
-
-}
-
-// ==================================================
-// 9. RESIZE CHARTS
-// ==================================================
 
 function resizeAllCharts() {
-
-Object.values(chartInstances).forEach(chart => {
-    if (chart) {
-        chart.resize();
-    }
-});
-
-}
-
-// ==================================================
-// 10. HISTORY LISTS
-// ==================================================
-
-function createHistoryList(data, field, unit) {
-
-if (!data.length) {
-    return "<p>No records available.</p>";
-}
-return `
-    <h3 class="history-heading">
-        Recent Records
-    </h3>
-    <div class="history-list">
-        ${data.slice(0, 10).map(record => `
-            <div class="history-item">
-                <span>
-                    ${escapeHTML(formatDate(record.recorded_at))}
-                </span>
-                <strong>
-                    ${escapeHTML(formatValue(record[field]))}
-                    ${escapeHTML(unit)}
-                </strong>
-            </div>
-        `).join("")}
-    </div>
-`;
-
-}
-
-function updateHistory(data) {
-
-const radiationHistory =
-    document.getElementById("radiation-history");
-const sleepHistory =
-    document.getElementById("sleep-history");
-const stressHistory =
-    document.getElementById("stress-history");
-if (radiationHistory) {
-    radiationHistory.innerHTML = createHistoryList(
-        data,
-        "radiation_level",
-        "mSv"
-    );
-}
-if (sleepHistory) {
-    sleepHistory.innerHTML = createHistoryList(
-        data,
-        "sleep_hours",
-        "Hours"
-    );
-}
-if (stressHistory) {
-    stressHistory.innerHTML = createHistoryList(
-        data,
-        "stress_level",
-        "/ 10"
-    );
-}
-
-}
-
-// ==================================================
-// 11. HEALTH REPORTS
-// ==================================================
-
-function updateHealthReports(data) {
-
-const container =
-    document.getElementById("health-records");
-if (!container) return;
-if (!data.length) {
-    container.textContent = "No health records available.";
-    return;
-}
-const columns = [
-    ["recorded_at", "Date"],
-    ["heart_rate", "Heart Rate"],
-    ["blood_pressure", "Blood Pressure"],
-    ["spo2", "SpO2"],
-    ["temperature", "Temperature"],
-    ["radiation_level", "Radiation"],
-    ["sleep_hours", "Sleep"],
-    ["stress_level", "Stress"],
-    ["bone_density", "Bone Density"],
-    ["bone_loss_risk", "Bone Loss Risk"],
-    ["muscle_strength", "Muscle Strength"],
-    ["muscle_mass", "Muscle Mass"],
-    ["exercise_minutes", "Exercise"],
-    ["wbc_count", "WBC Count"],
-    ["inflammation_level", "Inflammation"]
-];
-const table = document.createElement("div");
-table.className = "table-wrapper";
-const tableElement = document.createElement("table");
-const thead = document.createElement("thead");
-const headerRow = document.createElement("tr");
-columns.forEach(column => {
-    const th = document.createElement("th");
-    th.textContent = column[1];
-    headerRow.appendChild(th);
-});
-thead.appendChild(headerRow);
-tableElement.appendChild(thead);
-const tbody = document.createElement("tbody");
-data.slice(0, 100).forEach(record => {
-    const row = document.createElement("tr");
-    columns.forEach(column => {
-        const td = document.createElement("td");
-        let value = record[column[0]];
-        if (column[0] === "recorded_at") {
-            value = formatDate(value);
+    Object.values(chartInstances).forEach(chart => {
+        if (chart) {
+            chart.resize();
+            chart.update("none");
         }
-        td.textContent = formatValue(value);
-        row.appendChild(td);
     });
-    tbody.appendChild(row);
-});
-tableElement.appendChild(tbody);
-table.appendChild(tableElement);
-container.replaceChildren(table);
-
 }
 
 // ==================================================
-// 12. FETCH AI ANALYSIS
+// 8. HEALTH REPORTS
+// ==================================================
+
+function updateHealthReports(records) {
+    if (!Array.isArray(records) || records.length === 0) return;
+
+    const latest = records[0];
+
+    setText("report-heart-rate", formatValue(latest.heart_rate));
+    setText("report-spo2", formatValue(latest.spo2));
+    setText("report-temperature", formatValue(latest.temperature));
+    setText(
+        "report-radiation",
+        formatValue(latest.radiation_level ?? latest.radiation_msv)
+    );
+    setText("report-bone-density", formatValue(latest.bone_density));
+    setText("report-muscle-strength", formatValue(latest.muscle_strength));
+    setText("report-wbc", formatValue(latest.wbc_count));
+    setText("report-inflammation", formatValue(latest.inflammation_level));
+    setText("report-exercise", formatValue(latest.exercise_minutes));
+    setText("report-sleep", formatValue(latest.sleep_hours));
+    setText("report-date", formatDate(latest.recorded_at));
+}
+
+// ==================================================
+// 9. HISTORY TABLE
+// ==================================================
+
+function updateHistory(records) {
+    const tableBody =
+        document.getElementById("history-table-body") ||
+        document.getElementById("historyTableBody");
+
+    if (!tableBody || !Array.isArray(records)) return;
+
+    if (records.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="10">No health records available.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    tableBody.innerHTML = records.slice(0, 50).map(record => `
+        <tr>
+            <td>${escapeHTML(formatDate(record.recorded_at))}</td>
+            <td>${escapeHTML(formatValue(record.heart_rate))}</td>
+            <td>${escapeHTML(formatValue(record.spo2))}</td>
+            <td>${escapeHTML(formatValue(record.temperature))}</td>
+            <td>${escapeHTML(formatValue(
+                record.radiation_level ?? record.radiation_msv
+            ))}</td>
+            <td>${escapeHTML(formatValue(record.bone_density))}</td>
+            <td>${escapeHTML(formatValue(record.muscle_strength))}</td>
+            <td>${escapeHTML(formatValue(record.wbc_count))}</td>
+            <td>${escapeHTML(formatValue(record.inflammation_level))}</td>
+            <td>${escapeHTML(formatValue(record.exercise_minutes))}</td>
+        </tr>
+    `).join("");
+}
+
+// ==================================================
+// 10. AI HEALTH ANALYSIS
 // ==================================================
 
 async function fetchAIAnalysis() {
-
-try {
-    const response = await fetch(
-        `${API_BASE}/api/alerts/${ASTRONAUT_ID}`
-    );
-    if (!response.ok) {
-        throw new Error(
-            "AI API error: " + response.status
+    try {
+        const response = await fetch(
+            `${API_BASE}/api/alerts/${ASTRONAUT_ID}`,
+            { cache: "no-store" }
         );
+
+        if (response.status === 404) {
+            latestAIData = null;
+            setText("health-status", "Awaiting first reading");
+            setText("ai-result", "Enter health data or add one demo sample to see the educational analysis.");
+            setText("ai-detail-result", "Enter health data or add one demo sample to see the educational analysis.");
+            setText("anomaly-score", "No model score until a reading is available.");
+            setText("ai-detail-score", "No model score until a reading is available.");
+            return null;
+        }
+        const data = await readJsonResponse(response);
+        latestAIData = data;
+
+        updateAIAnalysis(data);
+        return data;
+    } catch (error) {
+        console.error("AI Analysis Error:", error);
+        setText("ai-status", "AI analysis unavailable");
+        throw error;
     }
-    const data = await response.json();
-    latestAIData = data;
-    updateAIAnalysis(data);
-    updateVisualHealthIndicators();
 }
-catch (error) {
-    console.error(
-        "AI Analysis Error:",
-        error
-    );
-    setText(
-        "health-status",
-        "AI Analysis Unavailable"
-    );
-    setText(
-        "ai-detail-status",
-        "AI Analysis Unavailable"
-    );
-}
-
-}
-
-// ==================================================
-// 13. UPDATE AI ANALYSIS
-// ==================================================
 
 function updateAIAnalysis(data) {
+    if (!data) return;
 
-const analysis = data?.analysis;
-if (!analysis) {
-    setText(
-        "health-status",
-        "No AI Analysis Available"
-    );
-    return;
+    const analysis = data.analysis || data;
+    latestAIData = { analysis };
+    const alerts = Array.isArray(analysis.alerts) ? analysis.alerts : [];
+    const recommendations = Array.isArray(analysis.recommendations)
+        ? analysis.recommendations : [];
+
+    const setList = (id, items, emptyMessage) => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.innerHTML = items.length
+            ? items.map(item => `<p class="alert-item">${escapeHTML(item)}</p>`).join("")
+            : `<p>${escapeHTML(emptyMessage)}</p>`;
+    };
+
+    const status = analysis.status || "Status unavailable";
+    const result = analysis.ai_result || "Analysis unavailable";
+    ["health-status", "ai-detail-status"].forEach(id => setText(id, status));
+    ["ai-result", "ai-detail-result"].forEach(id => setText(id, result));
+    setList("ai-alerts", alerts, "No threshold alerts in this sample.");
+    setList("ai-detail-alerts", alerts, "No threshold alerts in this sample.");
+    setList("ai-detail-recommendations", recommendations, "No follow-up suggestions.");
+
+    const score = getNumber(analysis.anomaly_score);
+    const scoreText = score !== null
+        ? `Model anomaly score: ${score.toFixed(3)}. Negative values indicate the model flagged an unusual pattern; this is not a probability.`
+        : "Model anomaly score unavailable.";
+    setText("anomaly-score", scoreText);
+    setText("ai-detail-score", scoreText);
+
+    const missing = analysis.missing_optional_fields || [];
+    const qualityText = missing.length
+        ? `Data quality: ${missing.length} optional reading${missing.length === 1 ? " is" : "s are"} missing; the model used demonstration defaults for its estimate.`
+        : "Data quality: all supported readings were provided.";
+    setText("ai-data-quality", qualityText);
+    setText("ai-disclaimer", analysis.disclaimer || "Educational simulation only; not a medical diagnosis.");
+    setText("ai-detail-disclaimer", analysis.disclaimer || "Educational simulation only; not a medical diagnosis.");
+    setText("ai-status", "Analysis updated");
+    updateHealthStatusBadges();
 }
-// DASHBOARD
-setText(
-    "health-status",
-    "Overall Health Status: " + formatValue(analysis.status)
-);
-setText(
-    "ai-result",
-    formatValue(analysis.ai_result)
-);
-renderList(
-    "ai-alerts",
-    analysis.alerts
-);
-renderList(
-    "ai-recommendations",
-    analysis.recommendations
-);
-setText(
-    "anomaly-score",
-    "Anomaly Score: " + formatValue(analysis.anomaly_score)
-);
-setText(
-    "ai-disclaimer",
-    formatValue(analysis.disclaimer)
-);
-// AI PAGE
-setText(
-    "ai-detail-status",
-    "Overall Health Status: " + formatValue(analysis.status)
-);
-setText(
-    "ai-detail-result",
-    formatValue(analysis.ai_result)
-);
-renderList(
-    "ai-detail-alerts",
-    analysis.alerts
-);
-renderList(
-    "ai-detail-recommendations",
-    analysis.recommendations
-);
-setText(
-    "ai-detail-score",
-    "Anomaly Score: " + formatValue(analysis.anomaly_score)
-);
-setText(
-    "ai-detail-disclaimer",
-    formatValue(analysis.disclaimer)
-);
-
-}
-
 // ==================================================
-// 14. RENDER AI LISTS
+// 15. DASHBOARD REFRESH
 // ==================================================
 
-function renderList(elementId, items) {
+async function initializeDashboard() {
+    if (refreshInProgress) return;
 
-const container =
-    document.getElementById(elementId);
-if (!container) return;
-container.replaceChildren();
-if (!Array.isArray(items) || items.length === 0) {
-    const paragraph = document.createElement("p");
-    paragraph.textContent = "No items available.";
-    container.appendChild(paragraph);
-    return;
-}
-const heading = document.createElement("ul");
-items.forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = String(item);
-    heading.appendChild(li);
-});
-container.appendChild(heading);
+    refreshInProgress = true;
 
-}
+    try {
+        const results = await Promise.allSettled([
+            fetchHealthData(),
+            fetchAIAnalysis()
+        ]);
 
-// ==================================================
-// 15. HEALTH STATUS BADGES
-// ==================================================
+        results.forEach((result, index) => {
+            if (result.status === "rejected") {
+                console.error(
+                    index === 0
+                        ? "Health refresh failed:"
+                        : "AI refresh failed:",
+                    result.reason
+                );
+            }
+        });
 
-function updateHealthStatusBadges() {
-
-const ids = [
-    "health-status",
-    "ai-detail-status"
-];
-const status = String(
-    latestAIData?.analysis?.status || ""
-).toLowerCase();
-let category = "unknown";
-let label = "Status unavailable";
-let icon = "⚪";
-if (
-    status.includes("critical") ||
-    status.includes("high risk")
-) {
-    category = "critical";
-    label = "Critical Health Alert";
-    icon = "🔴";
-}
-else if (
-    status.includes("warning") ||
-    status.includes("moderate")
-) {
-    category = "warning";
-    label = "Health Warning";
-    icon = "🟡";
-}
-else if (
-    status.includes("normal") ||
-    status.includes("healthy") ||
-    status.includes("low risk")
-) {
-    category = "normal";
-    label = "Health Status Normal";
-    icon = "🟢";
-}
-ids.forEach(id => {
-    const heading = document.getElementById(id);
-    if (!heading) return;
-    let badge = document.getElementById(
-        id + "-badge"
-    );
-    if (!badge) {
-        badge = document.createElement("div");
-        badge.id = id + "-badge";
-        heading.insertAdjacentElement(
-            "afterend",
-            badge
-        );
+        setText("last-updated", "Last updated: " + new Date().toLocaleTimeString());
+    } finally {
+        refreshInProgress = false;
     }
-    badge.className =
-        "health-status-badge " + category;
-    badge.textContent = icon + " " + label;
-});
+}
 
+// ==================================================
+// 17. MANUAL REFRESH BUTTON
+// ==================================================
+
+function initializeRefreshButton() {
+    const refreshButton =
+        document.getElementById("refresh-button") ||
+        document.getElementById("refreshButton");
+
+    if (!refreshButton) return;
+
+    refreshButton.addEventListener("click", async function () {
+        this.disabled = true;
+
+        try {
+            await initializeDashboard();
+        } finally {
+            this.disabled = false;
+        }
+    });
+}
+
+// ==================================================
+// 18. DOWNLOAD REPORT
+// ==================================================
+
+function initializeReportDownload() {
+    const downloadButton =
+        document.getElementById("download-report") ||
+        document.getElementById("downloadReport");
+
+    if (!downloadButton) return;
+
+    downloadButton.addEventListener("click", function () {
+        if (!latestHealthData.length) {
+            alert("No health records available to download.");
+            return;
+        }
+
+        const headers = [
+            "Recorded At",
+            "Data Source",
+            "Heart Rate",
+            "SpO2",
+            "Temperature",
+            "Radiation",
+            "Sleep Hours",
+            "Exercise Minutes",
+            "Bone Density",
+            "Muscle Strength",
+            "WBC Count",
+            "Inflammation Level"
+        ];
+
+        const rows = latestHealthData.map(record => [
+            record.recorded_at,
+            record.data_source || "legacy",
+            record.heart_rate,
+            record.spo2,
+            record.temperature,
+            record.radiation_level ?? record.radiation_msv,
+            record.sleep_hours,
+            record.exercise_minutes,
+            record.bone_density,
+            record.muscle_strength,
+            record.wbc_count,
+            record.inflammation_level
+        ]);
+
+        const csv = [
+            headers,
+            ...rows
+        ].map(row =>
+            row.map(value =>
+                `"${String(value ?? "").replace(/"/g, '""')}"`
+            ).join(",")
+        ).join("\n");
+
+        const blob = new Blob([csv], {
+            type: "text/csv;charset=utf-8;"
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "astrocare-health-report.csv";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        URL.revokeObjectURL(url);
+    });
+}
+function updateHealthStatusBadges() {
+    const ids = ["health-status", "ai-detail-status"];
+    const status = String(
+        latestAIData?.analysis?.status || ""
+    ).toLowerCase();
+
+    let category = "unknown";
+    let label = "Status unavailable";
+    let icon = "⚪";
+
+    if (status.includes("critical") || status.includes("high risk")) {
+        category = "critical";
+        label = "Critical Health Alert";
+        icon = "🔴";
+    } else if (status.includes("warning") || status.includes("moderate")) {
+        category = "warning";
+        label = "Health Warning";
+        icon = "🟡";
+    } else if (
+        status.includes("normal") ||
+        status.includes("healthy") ||
+        status.includes("low risk")
+    ) {
+        category = "normal";
+        label = "Health Status Normal";
+        icon = "🟢";
+    }
+
+    ids.forEach(id => {
+        const heading = document.getElementById(id);
+        if (!heading) return;
+
+        let badge = document.getElementById(id + "-badge");
+
+        if (!badge) {
+            badge = document.createElement("div");
+            badge.id = id + "-badge";
+            heading.insertAdjacentElement("afterend", badge);
+        }
+
+        badge.className = "health-status-badge " + category;
+        badge.textContent = icon + " " + label;
+    });
 }
 
 // ==================================================
 // 16. HEALTH PROGRESS INDICATORS
 // ==================================================
 
-function createHealthProgress(
+function createHealthProgress(elementId, title, maximum, unit, note) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
 
-elementId,
-title,
-maximum,
-unit,
-note
+    const card = element.closest(".stat-card");
+    if (!card) return;
 
-) {
+    const progressId = elementId + "-progress";
+    let container = document.getElementById(progressId);
 
-const element = document.getElementById(elementId);
-if (!element) return;
-const card = element.closest(".stat-card");
-if (!card) return;
-const progressId = elementId + "-progress";
-let container = document.getElementById(progressId);
-if (!container) {
-    container = document.createElement("div");
-    container.id = progressId;
-    container.className = "health-progress";
-    card.appendChild(container);
-}
-const value = getNumber(
-    element.textContent
-);
-if (value === null) {
-    container.textContent = title + ": Data unavailable";
-    return;
-}
-const percentage = Math.min(
-    100,
-    Math.max(0, (value / maximum) * 100)
-);
-let level = "low";
-if (percentage >= 70) {
-    level = "high";
-}
-else if (percentage >= 40) {
-    level = "medium";
-}
-container.innerHTML = `
-    <div class="health-progress-header">
-        <span>${escapeHTML(title)}</span>
-        <strong>${escapeHTML(value)}${escapeHTML(unit)}</strong>
-    </div>
-    <div class="health-progress-track">
-        <div
-            class="health-progress-fill ${level}"
-            style="width: ${percentage}%">
+    if (!container) {
+        container = document.createElement("div");
+        container.id = progressId;
+        container.className = "health-progress";
+        card.appendChild(container);
+    }
+
+    const value = getNumber(element.textContent);
+
+    if (value === null) {
+        container.textContent = title + ": Data unavailable";
+        return;
+    }
+
+    const percentage = Math.min(
+        100,
+        Math.max(0, (value / maximum) * 100)
+    );
+
+    let level = "low";
+    if (percentage >= 70) {
+        level = "high";
+    } else if (percentage >= 40) {
+        level = "medium";
+    }
+
+    container.innerHTML = `
+        <div class="health-progress-header">
+            <span>${escapeHTML(title)}</span>
+            <strong>${escapeHTML(value)}${escapeHTML(unit)}</strong>
         </div>
-    </div>
-    <small class="health-progress-note">
-        ${escapeHTML(note)}
-    </small>
-`;
-
+        <div class="health-progress-track">
+            <div class="health-progress-fill ${level}"
+                 style="width: ${percentage}%"></div>
+        </div>
+        <small class="health-progress-note">
+            ${escapeHTML(note)}
+        </small>
+    `;
 }
 
 // ==================================================
@@ -911,30 +797,31 @@ container.innerHTML = `
 // ==================================================
 
 function updateVisualHealthIndicators() {
+    updateHealthStatusBadges();
 
-updateHealthStatusBadges();
-createHealthProgress(
-    "oxygen",
-    "Blood Oxygen",
-    100,
-    "%",
-    "Displayed relative to a 100% scale."
-);
-createHealthProgress(
-    "bone-loss-risk",
-    "Bone Loss Risk",
-    100,
-    "%",
-    "Reported risk percentage."
-);
-createHealthProgress(
-    "stress-level",
-    "Stress Level",
-    10,
-    "/10",
-    "Displayed relative to a 10-point scale."
-);
+    createHealthProgress(
+        "oxygen",
+        "Blood Oxygen",
+        100,
+        "%",
+        "Displayed relative to a 100% scale."
+    );
 
+    createHealthProgress(
+        "bone-loss-risk",
+        "Bone Loss Risk",
+        100,
+        "%",
+        "Reported risk percentage."
+    );
+
+    createHealthProgress(
+        "stress-level",
+        "Stress Level",
+        10,
+        "/10",
+        "Displayed relative to a 10-point scale."
+    );
 }
 
 // ==================================================
@@ -942,251 +829,174 @@ createHealthProgress(
 // ==================================================
 
 function initializeHealthForm() {
+    const form = document.getElementById("health-entry-form");
+    if (!form || form.dataset.initialized === "true") return;
 
-const form = document.getElementById(
-    "health-entry-form"
-);
-if (!form) return;
-form.addEventListener("submit", async function(event) {
-    event.preventDefault();
-    const button = document.getElementById(
-        "submit-health-data"
-    );
-    const message = document.getElementById(
-        "form-message"
-    );
-    if (!form.reportValidity()) {
-        return;
-    }
-    const payload = {
-        astronaut_id: ASTRONAUT_ID,
-        heart_rate: Number(
-            document.getElementById("input-heart-rate").value
-        ),
-        spo2: Number(
-            document.getElementById("input-spo2").value
-        ),
-        temperature: Number(
-            document.getElementById("input-temperature").value
-        ),
-        blood_pressure:
-            document.getElementById("input-blood-pressure").value,
-        radiation_msv: Number(
-            document.getElementById("input-radiation").value
-        ),
-        sleep_hours: Number(
-            document.getElementById("input-sleep").value
-        ),
-        stress_level: Number(
-            document.getElementById("input-stress").value
-        ),
-        bone_density: Number(
-            document.getElementById("input-bone-density").value
-        ),
-        bone_loss_risk: Number(
-            document.getElementById("input-bone-risk").value
-        ),
-        muscle_strength: Number(
-            document.getElementById("input-muscle-strength").value
-        ),
-        muscle_mass: Number(
-            document.getElementById("input-muscle-mass").value
-        ),
-        exercise_minutes: Number(
-            document.getElementById("input-exercise").value
-        ),
-        wbc_count: Number(
-            document.getElementById("input-wbc").value
-        ),
-        inflammation_level: Number(
-            document.getElementById("input-inflammation").value
-        )
-    };
-    const numericValues = Object.entries(payload)
-        .filter(([key]) => key !== "astronaut_id" && key !== "blood_pressure");
-    const invalidNumber = numericValues.some(
-        ([, value]) => !Number.isFinite(value)
-    );
-    if (invalidNumber) {
-        message.textContent =
-            "Please enter valid numeric values.";
-        return;
-    }
-    button.disabled = true;
-    button.textContent = "Saving...";
-    message.textContent = "Submitting health data...";
-    try {
-        const response = await fetch(
-            `${API_BASE}/api/health`,
-            {
+    form.dataset.initialized = "true";
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const button = document.getElementById("submit-health-data");
+        const message = document.getElementById("form-message");
+
+        if (!form.reportValidity()) return;
+
+        const valueOf = id => {
+            const element = document.getElementById(id);
+            return element ? element.value : "";
+        };
+
+        const payload = {
+            astronaut_id: ASTRONAUT_ID,
+            data_source: "manual",
+            heart_rate: Number(valueOf("input-heart-rate")),
+            spo2: Number(valueOf("input-spo2")),
+            temperature: Number(valueOf("input-temperature")),
+            blood_pressure: valueOf("input-blood-pressure"),
+            radiation_msv: Number(valueOf("input-radiation")),
+            sleep_hours: Number(valueOf("input-sleep")),
+            stress_level: Number(valueOf("input-stress")),
+            bone_density: Number(valueOf("input-bone-density")),
+            bone_loss_risk: Number(valueOf("input-bone-risk")),
+            muscle_strength: Number(valueOf("input-muscle-strength")),
+            muscle_mass: Number(valueOf("input-muscle-mass")),
+            exercise_minutes: Number(valueOf("input-exercise")),
+            wbc_count: Number(valueOf("input-wbc")),
+            inflammation_level: Number(valueOf("input-inflammation"))
+        };
+
+        const numericValues = Object.entries(payload).filter(
+            ([key]) =>
+                key !== "astronaut_id" &&
+                key !== "data_source" &&
+                key !== "blood_pressure"
+        );
+
+        const invalidNumber = numericValues.some(
+            ([, value]) => !Number.isFinite(value)
+        );
+
+        if (invalidNumber) {
+            if (message) {
+                message.textContent = "Please enter valid numeric values.";
+            }
+            return;
+        }
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = "Saving...";
+        }
+
+        if (message) message.textContent = "Submitting health data...";
+
+        try {
+            const response = await fetch(`${API_BASE}/api/health`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(payload)
+            });
+
+            const result = await readJsonResponse(response);
+
+            if (message) {
+                message.textContent =
+                    "✅ " + (result.message || "Health data saved successfully");
+                message.style.color = "#4ade80";
             }
-        );
-        const result = await response.json();
-        if (!response.ok) {
-            throw new Error(
-                result.error || "Unable to save health data."
-            );
+
+            form.reset();
+            await initializeDashboard();
+        } catch (error) {
+            console.error("Health Submission Error:", error);
+
+            if (message) {
+                message.textContent = "❌ " + error.message;
+                message.style.color = "#fb7185";
+            }
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = "💾 Save Health Data";
+            }
         }
-        message.textContent =
-            "✅ " + result.message;
-        message.style.color = "#4ade80";
-        form.reset();
-        await initializeDashboard();
-    }
-    catch (error) {
-        console.error(
-            "Health Submission Error:",
-            error
-        );
-        message.textContent =
-            "❌ " + error.message;
-        message.style.color = "#fb7185";
-    }
-    finally {
-        button.disabled = false;
-        button.textContent = "💾 Save Health Data";
-    }
-});
-
-}
-
-
-// ==================================================
-// DEMO SENSOR SIMULATION
-// Educational demonstration data only
-// ==================================================
-
-let demoReadingInProgress = false;
-let demoTick = 0;
-
-function generateDemoReading() {
-
-    if (demoReadingInProgress) return;
-
-    demoReadingInProgress = true;
-    demoTick++;
-
-    const vary = (base, amplitude, min, max, decimals = 1) => {
-        const value = base
-            + Math.sin(demoTick * 0.7) * amplitude
-            + (Math.random() - 0.5) * amplitude * 0.5;
-
-        return Number(
-            Math.min(max, Math.max(min, value)).toFixed(decimals)
-        );
-    };
-
-    const systolic = vary(120, 5, 100, 140, 0);
-    const diastolic = vary(80, 3, 60, 90, 0);
-
-    const payload = {
-        astronaut_id: ASTRONAUT_ID,
-        heart_rate: vary(75, 8, 55, 110, 0),
-        spo2: vary(98, 1, 94, 100, 1),
-        temperature: vary(36.8, 0.3, 36, 38, 1),
-        blood_pressure: `${systolic}/${diastolic}`,
-        stress_level: vary(5, 2, 1, 10, 0),
-        sleep_hours: vary(7.5, 0.5, 5, 9, 1),
-        radiation_level: vary(2.5, 0.5, 0, 5, 2),
-        bone_density: vary(1.2, 0.02, 1, 1.5, 2),
-        muscle_strength: vary(85, 3, 60, 100, 1),
-        inflammation_level: vary(5, 1, 1, 10, 1),
-        exercise_minutes: vary(60, 10, 0, 120, 0)
-    };
-
-    console.log("Generating SIMULATED demo reading:", payload);
-
-    fetch(`${API_BASE}/api/health`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(async response => {
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                result.error || `API error: ${response.status}`
-            );
-        }
-
-        console.log("SIMULATED reading saved:", result);
-        return result;
-    })
-    .catch(error => {
-        console.error("Demo simulation failed:", error);
-    })
-    .finally(() => {
-        demoReadingInProgress = false;
     });
 }
 
 // ==================================================
-// 19. INITIALIZE DASHBOARD
+// 19. EXPLICIT DEMO READING
 // ==================================================
 
-async function initializeDashboard() {
+function initializeDemoReadingButton() {
+    const button = document.getElementById("demo-reading-button");
+    const message = document.getElementById("demo-reading-message");
+    if (!button) return;
 
-if (refreshInProgress) return;
-refreshInProgress = true;
-try {
-    await Promise.all([
-        fetchHealthData(),
-        fetchAIAnalysis()
-    ]);
-}
-finally {
-    refreshInProgress = false;
-}
+    button.addEventListener("click", async function () {
+        button.disabled = true;
+        button.textContent = "Creating sample…";
+        if (message) message.textContent = "Saving one synthetic sample…";
 
+        const vary = (base, spread, digits = 1) => Number(
+            (base + (Math.random() * 2 - 1) * spread).toFixed(digits)
+        );
+        const payload = {
+            astronaut_id: ASTRONAUT_ID,
+            data_source: "demo",
+            heart_rate: Math.round(vary(76, 5, 0)),
+            spo2: vary(98, 0.8),
+            temperature: vary(36.8, 0.25),
+            blood_pressure: `${Math.round(vary(120, 5, 0))}/${Math.round(vary(80, 4, 0))}`,
+            radiation_msv: vary(0.42, 0.08, 2),
+            sleep_hours: vary(7.2, 0.4),
+            stress_level: Math.round(vary(4, 1)),
+            bone_density: vary(1.2, 0.025, 3),
+            bone_loss_risk: vary(12, 2),
+            muscle_strength: vary(85, 4),
+            muscle_mass: vary(42, 1.5),
+            exercise_minutes: Math.round(vary(35, 8, 0)),
+            wbc_count: vary(7.2, 0.5),
+            inflammation_level: vary(2.5, 0.6)
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/api/health`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            await readJsonResponse(response);
+            await initializeDashboard();
+            if (message) message.textContent =
+                "One synthetic sample was saved. It is labeled demo data.";
+        } catch (error) {
+            console.error("Demo reading error:", error);
+            if (message) message.textContent =
+                "Could not save sample: " + error.message;
+        } finally {
+            button.disabled = false;
+            button.textContent = "＋ Add demo reading";
+        }
+    });
 }
 
 // ==================================================
-// 20. APPLICATION INITIALIZATION
+// 20. START APPLICATION
 // ==================================================
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function () {
+    updateDateTime();
+    initializeNavigation();
+    initializeHealthForm();
+    initializeRefreshButton();
+    initializeReportDownload();
+    initializeDemoReadingButton();
 
-// DATE AND TIME
-updateDateTime();
-setInterval(
-    updateDateTime,
-    1000
-);
-// NAVIGATION
-initializeNavigation();
-// HEALTH FORM
-initializeHealthForm();
-// INITIAL DATA
-initializeDashboard();
-// AUTOMATIC DEMO DATA + DASHBOARD REFRESH
-// Generates clearly labelled simulated data every 5 seconds.
-generateDemoReading();
-
-setInterval(async function() {
-    if (demoReadingInProgress) return;
-
-    generateDemoReading();
-
-    // Allow the POST request to finish before refreshing.
-    // The next normal refresh will also fetch the saved record.
-}, 5000);
-
-// Refresh dashboard data independently.
-setInterval(
-    initializeDashboard,
-    5000
-);
-
+    setInterval(updateDateTime, 1000);
+    await initializeDashboard();
+    // Refresh displays without creating or saving new readings.
+    setInterval(initializeDashboard, 30000);
 });
-
-// ==================================================
-// END OF ASTROCARE AI
-// ==================================================
