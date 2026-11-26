@@ -990,6 +990,7 @@ function initializeDemoReadingButton() {
 document.addEventListener("DOMContentLoaded", async function () {
     updateDateTime();
     initializeNavigation();
+    initializeCharts();
     initializeHealthForm();
     initializeRefreshButton();
     initializeReportDownload();
