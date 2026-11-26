@@ -45,9 +45,9 @@
         <p id="date-time"></p>
     </div>
     <div class="mission-info">
-        <span class="mission-status">🟢 Mission Active</span>
-        <span>Mission: Artemis</span>
-        <span>Astronaut ID: ASTRO-001</span>
+        <span class="mission-status">🧪 EDUCATIONAL SIMULATION</span>
+        <span>Scenario: Artemis long-duration mission</span>
+        <span>Astronaut profile: ASTRO-001</span>
     </div>
 </header>
 <!-- ================================= -->
@@ -55,10 +55,18 @@
 <!-- ================================= -->
 <section id="page-dashboard" class="page-section active">
     <div class="welcome">
-        <h2>Welcome, Commander! 👋</h2>
+        <h2>Mission health, at a glance</h2>
         <p>
-            Monitor your health and well-being during your space mission.
+            Explore how health signals can be monitored during a long-duration space mission.
+            All readings are illustrative simulation data, not real telemetry.
         </p>
+        <div class="demo-actions">
+            <button type="button" id="demo-reading-button">＋ Add demo reading</button>
+            <span id="demo-reading-message" role="status" aria-live="polite">
+                No readings are created automatically.
+            </span>
+        </div>
+        <p id="reading-source" class="data-quality"></p>
     </div>
     <!-- VITAL STATISTICS -->
     <h2 class="section-heading">❤️ Vital Statistics</h2>
@@ -148,6 +156,7 @@
             Fetching AI health analysis...
         </p>
         <div id="ai-alerts"></div>
+        <p id="ai-data-quality" class="data-quality"></p>
         <div id="ai-recommendations"></div>
         <p id="anomaly-score"></p>
         <small id="ai-disclaimer"></small>
@@ -264,7 +273,7 @@
                 </div>
 
                 <div class="stat-card">
-                    <label for="input-wbc">WBC Count</label>
+                    <label for="input-wbc">WBC Count (10⁹/L)</label>
                     <input type="number" id="input-wbc"
                            step="any" required placeholder="Enter value">
                 </div>
@@ -523,12 +532,17 @@
     <div class="info-card">
         <h3>🔄 Data Monitoring</h3>
         <p>
-            Health records are automatically refreshed
-            every five seconds.
+            The dashboard refreshes every 30 seconds. It does not create
+            readings automatically; demo samples are saved only when requested.
         </p>
         <p>
             AI health analysis is retrieved from the
             Flask backend.
+        </p>
+        <p>
+            On Render, SQLite history is preserved only when the web service
+            has a persistent disk mounted and <code>ASTROCARE_DATA_DIR</code>
+            points to that mount.
         </p>
     </div>
     <div class="info-card">
