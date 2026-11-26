@@ -4,7 +4,7 @@ import json
 import urllib.request
 from datetime import datetime
 # ==========================================
-# ASTROCARE AI - LIVE SENSOR SIMULATOR
+# ASTROCARE AI - MANUAL, CONTINUOUS DEMO SENSOR SIMULATOR
 # ==========================================
 API_URL = "http://127.0.0.1:5001/api/health"
 ASTRONAUT_ID = "ASTRO-001"
@@ -107,6 +107,7 @@ def generate_readings():
     # ======================================
     readings = {
         "astronaut_id": ASTRONAUT_ID,
+        "data_source": "demo",
         "heart_rate": heart_rate,
         "spo2": spo2,
         "temperature": temperature,

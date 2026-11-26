@@ -8,6 +8,7 @@ from io import BytesIO
 import sqlite3
 import re
 import math
+import os
 
 from analyzer import analyze_health
 
@@ -38,7 +39,11 @@ app = Flask(
 
 CORS(app)
 
-DATABASE = BASE_DIR / "astronaut.db"
+# Render's filesystem is temporary unless a persistent disk is mounted.
+# Set ASTROCARE_DATA_DIR to that disk's mount path (for example /var/data).
+DATA_DIR = Path(os.environ.get("ASTROCARE_DATA_DIR", str(BASE_DIR)))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DATABASE = DATA_DIR / "astronaut.db"
 
 
 # ==========================================
@@ -82,7 +87,8 @@ def initialize_database():
                 muscle_mass REAL,
                 exercise_minutes REAL,
                 wbc_count REAL,
-                inflammation_level REAL
+                inflammation_level REAL,
+                data_source TEXT NOT NULL DEFAULT 'legacy'
 
             )
         """)
@@ -101,7 +107,8 @@ def initialize_database():
             "muscle_mass": "REAL",
             "exercise_minutes": "REAL",
             "wbc_count": "REAL",
-            "inflammation_level": "REAL"
+            "inflammation_level": "REAL",
+            "data_source": "TEXT NOT NULL DEFAULT 'legacy'"
         }
 
         for column, data_type in new_columns.items():
@@ -314,6 +321,10 @@ def save_health():
         }), 400
 
     astronaut_id = astronaut_id.strip()
+    data_source = data.get("data_source", "manual")
+
+    if not isinstance(data_source, str) or data_source not in {"manual", "demo"}:
+        return jsonify({"error": "Invalid data source"}), 400
 
     conn = None
 
@@ -412,11 +423,12 @@ def save_health():
                 exercise_minutes,
                 wbc_count,
                 inflammation_level,
+                data_source,
                 recorded_at
 
             )
 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         """, (
 
@@ -435,6 +447,7 @@ def save_health():
             readings["exercise_minutes"],
             readings["wbc_count"],
             readings["inflammation_level"],
+            data_source,
             datetime.now(timezone.utc).isoformat()
 
         ))
@@ -445,6 +458,7 @@ def save_health():
 
             "message": "Health data saved successfully",
             "astronaut_id": astronaut_id,
+            "data_source": data_source,
             "readings": readings,
             "analysis": analysis
 
@@ -810,6 +824,8 @@ def generate_health_pdf(astronaut_id, report_type):
 
             ["Sleep Duration", f"{latest['sleep_hours']} hours"],
 
+            ["Data Source", str(latest["data_source"] or "legacy")],
+
             ["Radiation Level", str(latest["radiation_level"])],
 
             ["Bone Density", str(latest["bone_density"])],
@@ -992,7 +1008,8 @@ def generate_health_pdf(astronaut_id, report_type):
             "Muscle Mass",
             "Exercise",
             "WBC",
-            "Inflammation"
+            "Inflammation",
+            "Source"
 
         ]
 
@@ -1020,7 +1037,8 @@ def generate_health_pdf(astronaut_id, report_type):
                 str(record["muscle_mass"]),
                 str(record["exercise_minutes"]),
                 str(record["wbc_count"]),
-                str(record["inflammation_level"])
+                str(record["inflammation_level"]),
+                str(record["data_source"] or "legacy")
 
             ])
 
@@ -1028,7 +1046,7 @@ def generate_health_pdf(astronaut_id, report_type):
 
             64, 39, 48, 30, 32,
             32, 32, 40, 43, 39,
-            48, 42, 40, 32, 45
+            48, 42, 40, 32, 45, 48
 
         ]
 
